@@ -3,11 +3,16 @@
   "version": "0.0.1",
   "description": "Kafka adapter for SAP Cloud Application Programming Model",
   "license": "MIT",
+  "main": "cds-plugin.js",
   "author": {
     "name": "Mike Zaschka",
     "email": "opensource@mikezaschka.com",
     "url": "https://mikezaschka.com"
   },
+  "workspaces": [
+    ".",
+    "examples/*"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mikezaschka/cds-kafka.git"

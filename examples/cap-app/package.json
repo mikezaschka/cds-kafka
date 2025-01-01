@@ -1,12 +1,10 @@
 {
-  "name": "cap-kafka-mock-app",
+  "name": "cap-kafka-example-app",
   "version": "1.0.0",
-  "description": "A simple CAP project.",
-  "repository": "<Add your repository here>",
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
-    "cds-kafka": "../"
+    "cds-kafka": "*"
   },
   "devDependencies": {
     "jest": "29.7.0"
@@ -32,7 +30,7 @@
         }
       },
       "kafka-service": {
-        "impl": "../cds-plugin.js"
+        "impl": "cds-kafka"
       }
     }
   }
