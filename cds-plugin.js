@@ -11,7 +11,7 @@ class KafkaService extends cds.MessagingService {
         super.init();
         this.LOG = cds.log('cds-kafka')
 
-        // Override 
+        // Override to support RegEx style topics
         const { on } = this
         this.on = function (...args) {
             if (Array.isArray(args[0])) {
@@ -46,20 +46,26 @@ class KafkaService extends cds.MessagingService {
         return super.on(event, cb)
     }
 
+    /**
+     * Initializes and returns a Kafka instance
+     * 
+     * @returns {Kafka}
+     */
     getKafka() {
         this.kafka ||= new Kafka({
+            ...this.options.credentials,
             clientId: this.getKafkaClientAndGroupId().clientId,
-            brokers: cds.env.requires[this.name].brokers,
-            logLevel: cds.env.requires[this.name].kafkaLogLevel || logLevel.ERROR,
-            retry: {
-                retries: 5, //Max number of retries per call
-            }
+            logLevel: this.options.credentials.logLevel || logLevel.ERROR,
         });
         return this.kafka;
     }
 
     /**
-     * Handles sending messages
+     * Handles sending messages to Kafka.
+     * 
+     * In case the format is set to 'cloudevents' the message will be wrapped in a CloudEvent according to: 
+     * https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/bindings/kafka-protocol-binding.md#33-structured-content-mode
+     * In contrast to the specification, we always icnlude CloudEvent headers in the Kafka message headers to allow for easier processing of the CloudEvent.
      * 
      * @param {*} msg 
      * @returns Promise<void>
@@ -74,14 +80,7 @@ class KafkaService extends cds.MessagingService {
         }
 
         let message = {};
-
         if (this.options.format === 'cloudevents') {
-
-            // Wrap the message in a CloudEvent according to: 
-            // https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/bindings/kafka-protocol-binding.md#33-structured-content-mode
-            // We also include the CloudEvent headers in the Kafka message headers
-            // to allow for easier processing of the CloudEvent.
-
             const ce = {
                 specversion: "1.0",
                 id: cds.utils.uuid(),
@@ -111,10 +110,12 @@ class KafkaService extends cds.MessagingService {
             }
         }
 
-        // Send message to Kafka
+        // Set the stage
         this.producer = this.getKafka().producer();
         await this.producer.connect();
         await this.ensureTopicExist(event)
+
+        // Finally send message to Kafka
         this.LOG.info('Emitting event:', event)
         await this.producer.send({
             topic: event,
@@ -138,19 +139,16 @@ class KafkaService extends cds.MessagingService {
         this.consumer = this.getKafka().consumer({ groupId: this.getKafkaClientAndGroupId().groupId });
         await this.consumer.connect();
 
-        // Transform topics to regex if needed
+        // Transform topics to RegEx if needed
         let topics = [...this.subscribedTopics.keys()].map(topic => this.stringOrRegex(topic));
 
-        // Handle catch all topic
+        // Handle catch all topic *, but ignore private topics starting with __
         if (this._listenToAll.value) {
-            // Ignore private topics (starting with __)
-            topics = [
-                new RegExp('^(?!__).*')
-            ];
+            topics = [new RegExp('^(?!__).*')];
         }
 
         // Merge potential topic configuration 
-        const topicConfig = cds.env.requires[this.name].topics || {}
+        const topicConfig = this.options.topics || {}
         for (const topic of topics) {
 
             if (topicConfig[topic]) {
@@ -231,6 +229,12 @@ class KafkaService extends cds.MessagingService {
         return msg
     }
 
+    /**
+     * 
+     * @override
+     * @param {*} message 
+     * @returns 
+     */
     handleIncomingMessage(message) {
 
         let payload;
@@ -257,8 +261,14 @@ class KafkaService extends cds.MessagingService {
         }
     }
 
+    /**
+     * Extracts the clientId and groupId from the credentials or VCAP_APPLICATION. 
+     * 
+     * @returns {Object}
+     */
     getKafkaClientAndGroupId() {
-        let { groupId, clientId } = cds.env.requires[this.name];
+        let { groupId } = this.options.consumer;
+        let { clientId } = this.options.credentials;
         const vcapApplication = process.env.VCAP_APPLICATION && JSON.parse(process.env.VCAP_APPLICATION)
         return {
             groupId: groupId || cds.env.app?.id || vcapApplication?.application_id || `sap/cds/${process.pid}`,
@@ -266,6 +276,12 @@ class KafkaService extends cds.MessagingService {
         }
     }
 
+    /**
+     * Checks if the topic is a regex or string and returns the corresponding.
+     * 
+     * @param {string} topic
+     * @returns {string|RegExp} 
+     */
     stringOrRegex(str) {
         const match = str.match(/^([\/~@;%#'])(.*)\1([gimsuy]*)$/);
 
@@ -286,6 +302,12 @@ class KafkaService extends cds.MessagingService {
         return str;
     }
 
+    /**
+     * Tries to create a topic if it does not exist.
+     * 
+     * @param {string} topic 
+     * @returns 
+     */
     async ensureTopicExist(topic) {
         if (!topic) return
         const admin = this.getKafka().admin()
@@ -294,7 +316,9 @@ class KafkaService extends cds.MessagingService {
         const existingTopics = await admin.listTopics()
         if (!existingTopics.includes(topic)) {
             this.LOG._info && this.LOG.info(`Creating topic: ${topic}`)
-            await admin.createTopics({ topics: [{ topic }] })
+            await admin.createTopics({ topics: [{ topic }] }).catch(err => {
+                this.LOG.error('Error while creating topic. Potentially you do not have sufficient privileges to create topics automatically and you have to create the topic manually.', err)
+            })
         }
         return admin.disconnect();
     }

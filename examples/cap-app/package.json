@@ -14,12 +14,30 @@
       "kafka-messaging": {
         "kind": "kafka-service",
         "format": "cloudevents",
-        "groupId": "com.sap.cap",
-        "client": "com.sap.cap",
-        "kafkaLogLevel": "4",
-        "brokers": [
-          "localhost:29092"
-        ],
+        "credentials": {
+          "[production]": {
+            "clientId": "ccloud-nodejs-client-50243f22-c6ea-4f4a-b0d5-1fc2d85ab035",
+            "brokers": [
+              "xxx.germanywestcentral.azure.confluent.cloud:9092"
+            ],
+            "ssl": true,
+            "sasl": {
+              "mechanism": "PLAIN",
+              "username": "",
+              "password": ""
+            }
+          },
+          "[development]": {
+            "clientId": "cap-kafka-example-app-1",
+            "brokers": [
+              "localhost:29092"
+            ],
+            "logLevel": "1"
+          }
+        },
+        "consumer": {
+          "groupId": "cap-kafka-example-app"
+        },
         "topics": {
           "someTopic": {
             "fromBeginning": true

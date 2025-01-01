@@ -3,8 +3,7 @@
 
 ## About this project
 
-CDS plugin providing integration with Apache Kafka.
-
+This project is a plugin for the SAP Cloud Application Programming Model (CAP) providing native integration with Apache Kafka as the messaging service.
 
 
 ## Table of Contents
@@ -12,10 +11,7 @@ CDS plugin providing integration with Apache Kafka.
 - [About this project](#about-this-project)
 - [Requirements](#requirements)
 - [Setup](#setup)
-- [Support, Feedback, Contributing](#support-feedback-contributing)
-- [Code of Conduct](#code-of-conduct)
-- [Licensing](#licensing)
-
+- [Usage](#usage)
 
 
 ## Requirements
@@ -23,7 +19,7 @@ CDS plugin providing integration with Apache Kafka.
 See [Getting Started](https://cap.cloud.sap/docs/get-started/in-a-nutshell) on how to jumpstart your development and grow as you go with SAP Cloud Application Programming Model.
 
 
-## Setup
+## Setup and Usage
 
 Install the plugin via:
 
@@ -38,9 +34,11 @@ Please follow the [guide on messaging](https://cap.cloud.sap/docs/guides/messagi
     "requires": {
       "kafka-messaging": {
         "kind": "kafka-service",
-        "brokers": [
-          "localhost:29092"
-        ],
+        "credentials": {
+            "brokers": [
+                "localhost:29092"
+            ]
+        }
       },
       "kafka-service": {
         "impl": "cds-kafka"
@@ -48,3 +46,23 @@ Please follow the [guide on messaging](https://cap.cloud.sap/docs/guides/messagi
     }
   }
 ```
+
+### Sending events
+
+Sending an event is done by using standard CAP functionality:
+
+```javascript
+const kafka = await cds.connect.to('kafka-messaging') 
+await kafka.emit('some-topic', { message: 'Hello World' });
+````
+
+There is no special functionality available 
+
+Since CAP is abstracting the event handling away from the underlying transport, the usage of kafka-based events is similar as any other adapter, with the exception of the .
+
+
+```javascript
+const messaging = await cds.connect.to('kafka-messaging') 
+messaging.on('some-topic', (message) => console.log(message)) 
+````
+
