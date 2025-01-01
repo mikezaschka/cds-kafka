@@ -1,0 +1,39 @@
+{
+  "name": "cap-kafka-mock-app",
+  "version": "1.0.0",
+  "description": "A simple CAP project.",
+  "repository": "<Add your repository here>",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "cds-kafka": "../"
+  },
+  "devDependencies": {
+    "jest": "29.7.0"
+  },
+  "cds": {
+    "requires": {
+      "kafka-messaging": {
+        "kind": "kafka-service",
+        "format": "cloudevents",
+        "groupId": "com.sap.cap",
+        "client": "com.sap.cap",
+        "kafkaLogLevel": "4",
+        "brokers": [
+          "localhost:29092"
+        ],
+        "topics": {
+          "someTopic": {
+            "fromBeginning": true
+          },
+          "/topic-(eu|us)-.*/i": {
+            "fromBeginning": false
+          }
+        }
+      },
+      "kafka-service": {
+        "impl": "../cds-plugin.js"
+      }
+    }
+  }
+}
