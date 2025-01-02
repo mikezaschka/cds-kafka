@@ -1,0 +1,41 @@
+_schema-version: 3.3.0
+ID: cap-kafka-example-app
+version: 1.0.0
+description: "A simple CAP project."
+parameters:
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci
+        - npx cds build --production
+modules:
+  - name: cap-kafka-example-app-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      buildpack: nodejs_buildpack
+      readiness-health-check-type: http
+      readiness-health-check-http-endpoint: /health
+    build-parameters:
+      builder: npm
+    provides:
+      - name: srv-api # required by consumers of CAP services (e.g. approuter)
+        properties:
+          srv-url: ${default-url}
+    requires:
+      - name: cap-kafka-example-app-kafka
+
+resources:
+  - name: kafka-service
+    type: org.cloudfoundry.user-provided-service
+    parameters:
+      path: confluent.json
+      config:
+        foo: baz
+  - name: cap-kafka-example-app-kafka
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: kafka
+      service-plan: standard

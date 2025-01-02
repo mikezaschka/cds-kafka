@@ -1,0 +1,12 @@
+{
+    "clientId": "ccloud-nodejs-client-50243f22-c6ea-4f4a-b0d5-1fc2d85ab035",
+    "brokers": [
+        "xxx.germanywestcentral.azure.confluent.cloud:9092"
+    ],
+    "ssl": true,
+    "sasl": {
+        "mechanism": "PLAIN",
+        "username": "",
+        "password": ""
+    }
+}

@@ -1,6 +1,6 @@
 {
   "name": "cds-kafka",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Kafka adapter for SAP Cloud Application Programming Model",
   "license": "MIT",
   "main": "cds-plugin.js",

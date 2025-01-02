@@ -27,12 +27,12 @@ class KafkaService extends cds.MessagingService {
         }
 
         cds.once('listening', async () => {
-            this.LOG.info(`Using Kafka for ${this.name}`);
+            this.LOG._info && this.LOG.info(`Using Kafka for ${this.name}`);
             await this.startListening()
         });
 
         cds.once("shutdown", async () => {
-            this.LOG.info('Disconnecting from Kafka');
+            this.LOG._info && this.LOG.info('Disconnecting from Kafka');
             await this.consumer.disconnect()
         });
     }
@@ -73,11 +73,21 @@ class KafkaService extends cds.MessagingService {
     async handle(msg) {
         if (msg.inbound) return super.handle(msg)
         let { event, data, headers } = msg;
+        let topic = event;
 
         // Store the tenant in the message headers
         if (cds.context.tenant) {
             headers['x-sap-cap-tenant'] = cds.context.tenant
         }
+
+        // Extract the key and partition from the headers
+        const key = headers['@kafka.key']  // Key for partitioning
+        const partition = headers['@kafka.partition'] // Partition to send the message to
+        topic = headers['@kafka.topic'] || topic
+
+        delete headers['@kafka.key']
+        delete headers['@kafka.partition']
+        delete headers['@kafka.topic']
 
         let message = {};
         if (this.options.format === 'cloudevents') {
@@ -92,6 +102,8 @@ class KafkaService extends cds.MessagingService {
             };
             message = {
                 value: JSON.stringify(ce),
+                key,
+                partition,
                 headers: {
                     ...headers,
                     "content-type": "application/cloudevents+json",
@@ -106,19 +118,21 @@ class KafkaService extends cds.MessagingService {
         } else {
             message = {
                 value: (typeof data === 'string' && data) || JSON.stringify(data),
-                headers
+                headers,
+                key,
+                partition
             }
         }
 
         // Set the stage
         this.producer = this.getKafka().producer();
         await this.producer.connect();
-        await this.ensureTopicExist(event)
+        await this.ensureTopicExist(topic)
 
         // Finally send message to Kafka
-        this.LOG.info('Emitting event:', event)
+        this.LOG._info && this.LOG.info('Emitting event', event, 'to topic', topic);
         await this.producer.send({
-            topic: event,
+            topic: topic,
             messages: [message]
         });
         await this.producer.disconnect()
@@ -132,7 +146,7 @@ class KafkaService extends cds.MessagingService {
     async startListening() {
 
         if (this.subscribedTopics.length === 0) {
-            this.LOG.info('No topics to subscribe to')
+            this.LOG.warn('No topics to subscribe to')
             return
         }
 
@@ -142,7 +156,7 @@ class KafkaService extends cds.MessagingService {
         // Transform topics to RegEx if needed
         let topics = [...this.subscribedTopics.keys()].map(topic => this.stringOrRegex(topic));
 
-        // Handle catch all topic *, but ignore private topics starting with __
+        // Handle catch all topic "*"", but ignore private topics starting with __
         if (this._listenToAll.value) {
             topics = [new RegExp('^(?!__).*')];
         }
@@ -152,13 +166,13 @@ class KafkaService extends cds.MessagingService {
         for (const topic of topics) {
 
             if (topicConfig[topic]) {
-                this.LOG.info(`Configuring topic ${topic} with:`, topicConfig[topic])
+                this.LOG._info && this.LOG.info(`Configuring topic ${topic} with:`, topicConfig[topic])
             }
             if (!(topic instanceof RegExp)) {
                 await this.ensureTopicExist(topic);
             }
             await this.consumer.subscribe({ topics: [topic], ...topicConfig[topic] || {} })
-            this.LOG.info('Subscribing to topic:', topic);
+            this.LOG._info && this.LOG.info('Subscribing to topic:', topic);
         }
 
         await this.consumer.run({
@@ -221,9 +235,8 @@ class KafkaService extends cds.MessagingService {
             }
 
             msg.event = subscribedEvent?.toString() || msg.event
-            msg.headers['x-sap-cap-effective-topic'] = subscribedEvent || this._listenToAll.value ? '*' : msg.event
-            msg.headers['x-sap-cap-original-topic'] = message.event
-            msg.topic = message.event
+            msg.headers['x-sap-cap-event'] = subscribedEvent || ( this._listenToAll.value ? '*' : msg.event )
+            msg.headers['x-sap-cap-kafka-topic'] = message.event
         }
 
         return msg

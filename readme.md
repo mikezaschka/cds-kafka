@@ -29,40 +29,6 @@ npm add cds-kafka
 
 Please follow the [guide on messaging](https://cap.cloud.sap/docs/guides/messaging/) to get an overview over the messaging concepts of CAP.
 
-```jsonc
-"cds": {
-    "requires": {
-      "kafka-messaging": {
-        "kind": "kafka-service",
-        "credentials": {
-            "brokers": [
-                "localhost:29092"
-            ]
-        }
-      },
-      "kafka-service": {
-        "impl": "cds-kafka"
-      }
-    }
-  }
-```
+### TBD: More infos following soon.
 
-### Sending events
-
-Sending an event is done by using standard CAP functionality:
-
-```javascript
-const kafka = await cds.connect.to('kafka-messaging') 
-await kafka.emit('some-topic', { message: 'Hello World' });
-````
-
-There is no special functionality available 
-
-Since CAP is abstracting the event handling away from the underlying transport, the usage of kafka-based events is similar as any other adapter, with the exception of the .
-
-
-```javascript
-const messaging = await cds.connect.to('kafka-messaging') 
-messaging.on('some-topic', (message) => console.log(message)) 
-````
-
+In the meantime, checkout the introducing blog post here: https://community.sap.com/t5/technology-blogs-by-members/using-apache-kafka-for-messaging-in-the-sap-cloud-application-programming/ba-p/13970176
