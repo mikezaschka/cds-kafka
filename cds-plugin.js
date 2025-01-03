@@ -33,7 +33,7 @@ class KafkaService extends cds.MessagingService {
 
         cds.once("shutdown", async () => {
             this.LOG._info && this.LOG.info('Disconnecting from Kafka');
-            await this.consumer.disconnect()
+            await this.consumer?.disconnect()
         });
     }
 
@@ -199,6 +199,8 @@ class KafkaService extends cds.MessagingService {
                     event: topic
                 }
 
+                this.LOG._info && this.LOG.info('Message received for subscribed topic: ', topic);
+
                 await this.tx(eventContext, tx => tx.emit(msg)).catch(err => {
                     this.LOG.error('Error while processing message:', err)
                     throw err
@@ -235,7 +237,7 @@ class KafkaService extends cds.MessagingService {
             }
 
             msg.event = subscribedEvent?.toString() || msg.event
-            msg.headers['x-sap-cap-event'] = subscribedEvent || ( this._listenToAll.value ? '*' : msg.event )
+            msg.headers['x-sap-cap-event'] = subscribedEvent || (this._listenToAll.value ? '*' : msg.event)
             msg.headers['x-sap-cap-kafka-topic'] = message.event
         }
 
@@ -280,8 +282,8 @@ class KafkaService extends cds.MessagingService {
      * @returns {Object}
      */
     getKafkaClientAndGroupId() {
-        let { groupId } = this.options.consumer;
-        let { clientId } = this.options.credentials;
+        let { groupId } = this.options?.consumer || { };
+        let { clientId } = this.options.credentials || { };
         const vcapApplication = process.env.VCAP_APPLICATION && JSON.parse(process.env.VCAP_APPLICATION)
         return {
             groupId: groupId || cds.env.app?.id || vcapApplication?.application_id || `sap/cds/${process.pid}`,

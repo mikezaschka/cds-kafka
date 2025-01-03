@@ -1,15 +1,19 @@
 {
-  "name": "cap-kafka-example-app",
+  "name": "cap-kafka-producer",
   "version": "1.0.0",
+  "description": "A simple CAP project.",
+  "repository": "<Add your repository here>",
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
-    "cds-kafka": "*"
+    "@sap/cds": "^8",
+    "express": "^4"
   },
   "devDependencies": {
-    "@sap/cds-dk": "^8",
-    "sqlite3": "5.1.7",
-    "jest": "29.7.0"
+    "@cap-js/cds-types": "^0.8.0"
+  },
+  "scripts": {
+    "start": "cds-serve"
   },
   "cds": {
     "requires": {
@@ -30,22 +34,11 @@
             }
           },
           "[development]": {
-            "clientId": "cap-kafka-example-app-1",
+            "clientId": "cap-kafka-example-app-2",
             "brokers": [
               "localhost:29092"
             ],
             "logLevel": "1"
-          }
-        },
-        "consumer": {
-          "groupId": "cap-kafka-example-app"
-        },
-        "topics": {
-          "someTopic": {
-            "fromBeginning": true
-          },
-          "/topic-(eu|us)-.*/i": {
-            "fromBeginning": false
           }
         }
       },
