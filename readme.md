@@ -3,7 +3,7 @@
 
 ## About this project
 
-This project is a plugin for the SAP Cloud Application Programming Model (CAP) providing native integration with Apache Kafka as the messaging service.
+This project is a plugin for the [SAP Cloud Application Programming Model (CAP)](https://cap.cloud.sap/docs/) providing native integration with Apache Kafka as the messaging service.
 
 
 
@@ -158,16 +158,16 @@ The following example shows an inspection of a message in the event handler. The
  
 ```json
 {
-  data: { subject: 'Hello World' },
-  headers: {
-    'ce-specversion': '1.0',
-    'ce-id': 'df396250-cb0d-4f88-97c4-0aa25faa12ef',
-    'ce-type': 'some-topic',
-    'ce-source': 'cap-kafka-example-app-1',
-    'ce-time': '2025-01-02T15:59:24.265Z',
-    'ce-datacontenttype': 'application/json',
+  "data": { "subject": "Hello World" },
+  "headers": {
+    "ce-specversion": "1.0",
+    "ce-id": "df396250-cb0d-4f88-97c4-0aa25faa12ef",
+    "ce-type": "some-topic",
+    "ce-source": "cap-kafka-example-app-1",
+    "ce-time": "2025-01-02T15:59:24.265Z",
+    "ce-datacontenttype": "application/json",
   },
-  event: 'some-topic'
+  "event": "some-topic"
 }
 ```
 
